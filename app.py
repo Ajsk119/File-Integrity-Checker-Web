@@ -22,7 +22,7 @@ def now_iso():
     return datetime.datetime.utcnow().isoformat() + "Z"
 
 
-@app.route("/")
+@app.route("/", methods=["GET", "HEAD"])
 def index():
     return render_template("index.html")
 
