@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>File Integrity Checker</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink:       #18181b;
+      --ink-2:     #52525b;
+      --ink-3:     #a1a1aa;
+      --ink-4:     #d4d4d8;
+      --surface:   #fafafa;
+      --white:     #ffffff;
+      --green:     #16a34a;
+      --green-bg:  #f0fdf4;
+      --green-bd:  #86efac;
+      --red:       #dc2626;
+      --red-bg:    #fff1f2;
+      --red-bd:    #fecaca;
+      --amber:     #d97706;
+      --blue:      #2563eb;
+
+      /* shadow system */
+      --shadow-sm:  0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+      --shadow-md:  0 4px 12px rgba(0,0,0,.08), 0 2px 4px rgba(0,0,0,.05);
+      --shadow-lg:  0 8px 28px rgba(0,0,0,.12), 0 4px 10px rgba(0,0,0,.07);
+      --shadow-xl:  0 16px 48px rgba(0,0,0,.14), 0 6px 16px rgba(0,0,0,.08);
+    }
+
+    body {
+      font-family: 'DM Sans', -apple-system, sans-serif;
+      background: var(--surface);
+      color: var(--ink);
+      min-height: 100vh;
+    }
+
+    /* ── nav ── */
+    nav {
+      background: var(--white);
+      border-bottom: 1px solid var(--ink-4);
+      padding: 0 28px;
+      height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: var(--shadow-sm);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14.5px;
+      font-weight: 600;
+      color: var(--ink);
+      letter-spacing: -0.2px;
+    }
+    .nav-brand .dot {
+      width: 8px; height: 8px;
+      background: var(--green);
+      border-radius: 50%;
+      box-shadow: 0 0 0 3px rgba(22,163,74,.15);
+      animation: pulse 2.4s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 3px rgba(22,163,74,.15); }
+      50%       { box-shadow: 0 0 0 5px rgba(22,163,74,.08); }
+    }
+    .nav-right {
+      font-size: 12px;
+      color: var(--ink-3);
+      font-family: 'DM Mono', monospace;
+    }
+
+    /* ── hero ── */
+    .hero {
+      background: var(--white);
+      border-bottom: 1px solid var(--ink-4);
+      padding: 52px 24px 44px;
+      text-align: center;
+    }
+    .hero h1 {
+      font-size: 34px;
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: 10px;
+      letter-spacing: -0.8px;
+      line-height: 1.2;
+    }
+    .hero p {
+      font-size: 15px;
+      color: var(--ink-2);
+      max-width: 440px;
+      margin: 0 auto 24px;
+      line-height: 1.65;
+    }
+    .algo-pills {
+      display: flex;
+      justify-content: center;
+      gap: 7px;
+      flex-wrap: wrap;
+    }
+    .pill {
+      background: var(--surface);
+      border: 1px solid var(--ink-4);
+      border-radius: 20px;
+      padding: 4px 13px;
+      font-size: 12px;
+      color: var(--ink-2);
+      font-family: 'DM Mono', monospace;
+      transition: background .18s, color .18s, border-color .18s, box-shadow .18s, transform .18s;
+      cursor: default;
+    }
+    .pill:hover {
+      background: var(--ink);
+      border-color: var(--ink);
+      color: #fff;
+      transform: translateY(-1px);
+      box-shadow: 0 3px 8px rgba(0,0,0,.18);
+    }
+    .pill.active {
+      background: var(--ink);
+      border-color: var(--ink);
+      color: #fff;
+    }
+
+    /* ── main layout ── */
+    .main {
+      max-width: 720px;
+      margin: 36px auto;
+      padding: 0 20px 72px;
+    }
+
+    /* ── step label ── */
+    .step-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--ink-3);
+      margin-bottom: 9px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .step-label .num {
+      width: 22px; height: 22px;
+      background: var(--ink-4);
+      border-radius: 50%;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--ink-2);
+      display: flex; align-items: center; justify-content: center;
+      transition: background .2s, color .2s, box-shadow .2s;
+    }
+    .step-label .num.done {
+      background: var(--green);
+      color: #fff;
+      box-shadow: 0 0 0 3px rgba(22,163,74,.18);
+    }
+    .step-label .num.active {
+      background: var(--ink);
+      color: #fff;
+      box-shadow: 0 0 0 3px rgba(24,24,27,.12);
+    }
+
+    /* ── card ── */
+    .card {
+      background: var(--white);
+      border: 1px solid var(--ink-4);
+      border-radius: 14px;
+      padding: 26px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow-sm);
+      transition: box-shadow .25s ease, transform .25s ease, border-color .25s ease;
+    }
+    .card:hover {
+      box-shadow: var(--shadow-lg);
+      transform: translateY(-3px);
+      border-color: #c4c4c8;
+    }
+    .card h2 {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 4px;
+      letter-spacing: -0.2px;
+    }
+    .card .desc {
+      font-size: 13px;
+      color: var(--ink-2);
+      margin-bottom: 20px;
+      line-height: 1.55;
+    }
+
+    /* ── upload area ── */
+    .upload-area {
+      border: 2px dashed var(--ink-4);
+      border-radius: 10px;
+      padding: 34px 20px;
+      text-align: center;
+      cursor: pointer;
+      position: relative;
+      transition: border-color .2s, background .2s, box-shadow .2s, transform .2s;
+    }
+    .upload-area:hover, .upload-area.over {
+      border-color: var(--ink);
+      background: #f4f4f5;
+      box-shadow: inset 0 0 0 1px rgba(24,24,27,.06), 0 4px 14px rgba(0,0,0,.08);
+      transform: scale(1.005);
+    }
+    .upload-area:hover .up-icon {
+      transform: translateY(-3px) scale(1.1);
+    }
+    .upload-area input {
+      position: absolute; inset: 0;
+      opacity: 0; cursor: pointer;
+      width: 100%; height: 100%;
+    }
+    .upload-area .up-icon {
+      font-size: 26px;
+      margin-bottom: 9px;
+      display: block;
+      transition: transform .22s ease;
+    }
+    .upload-area .up-text {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 4px;
+    }
+    .upload-area .up-sub {
+      font-size: 12px;
+      color: var(--ink-3);
+    }
+    .upload-area .up-sub b {
+      color: var(--ink);
+      text-decoration: underline;
+      text-decoration-style: dotted;
+    }
+
+    /* ── file list ── */
+    .file-list {
+      display: none;
+      margin-top: 12px;
+      border: 1px solid var(--ink-4);
+      border-radius: 9px;
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+    .file-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 14px;
+      font-size: 13px;
+      border-bottom: 1px solid #f4f4f5;
+      transition: background .15s;
+    }
+    .file-row:hover { background: #f9f9f9; }
+    .file-row:last-child { border-bottom: none; }
+    .file-row .fn { flex: 1; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .file-row .fs { color: var(--ink-3); font-size: 12px; flex-shrink: 0; font-family: 'DM Mono', monospace; }
+
+    /* ── algo row ── */
+    .algo-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 16px;
+    }
+    .algo-row label { font-size: 13px; color: var(--ink-2); }
+    .algo-row select {
+      font-size: 13px;
+      font-family: 'DM Mono', monospace;
+      padding: 6px 10px;
+      border: 1px solid var(--ink-4);
+      border-radius: 7px;
+      background: var(--white);
+      color: var(--ink);
+      outline: none;
+      cursor: pointer;
+      transition: border-color .18s, box-shadow .18s;
+    }
+    .algo-row select:hover { border-color: #a1a1aa; box-shadow: 0 2px 6px rgba(0,0,0,.07); }
+    .algo-row select:focus { border-color: var(--ink); box-shadow: 0 0 0 3px rgba(24,24,27,.1); }
+
+    /* ── buttons ── */
+    .actions { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+    .btn {
+      padding: 9px 20px;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: 'DM Sans', sans-serif;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      transition: transform .18s ease, box-shadow .18s ease, opacity .15s, background .15s;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0);
+      transition: background .15s;
+    }
+    .btn:hover::after { background: rgba(255,255,255,.1); }
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,.2);
+    }
+    .btn:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 6px rgba(0,0,0,.12);
+      opacity: .9;
+    }
+    .btn:disabled {
+      opacity: .38;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+    .btn-dark  {
+      background: var(--ink);
+      color: #fff;
+      box-shadow: 0 2px 6px rgba(24,24,27,.2);
+    }
+    .btn-dark:hover  { box-shadow: 0 8px 22px rgba(24,24,27,.3); }
+    .btn-green {
+      background: var(--green);
+      color: #fff;
+      box-shadow: 0 2px 6px rgba(22,163,74,.25);
+    }
+    .btn-green:hover { box-shadow: 0 8px 22px rgba(22,163,74,.35); }
+    .btn-ghost {
+      background: var(--surface);
+      color: var(--ink-2);
+      border: 1px solid var(--ink-4);
+      box-shadow: var(--shadow-sm);
+    }
+    .btn-ghost:hover { background: var(--white); color: var(--ink); box-shadow: var(--shadow-md); }
+
+    /* ── spinner ── */
+    .spin {
+      display: none;
+      width: 13px; height: 13px;
+      border: 2px solid rgba(255,255,255,.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .6s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── success notice ── */
+    .notice {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      margin-top: 14px;
+      padding: 10px 14px;
+      background: var(--green-bg);
+      border: 1px solid var(--green-bd);
+      border-radius: 8px;
+      font-size: 13px;
+      color: #15803d;
+      box-shadow: 0 2px 8px rgba(22,163,74,.1);
+    }
+    .notice.show { display: flex; }
+
+    /* ── connector line ── */
+    .connector {
+      width: 2px;
+      height: 18px;
+      background: linear-gradient(to bottom, var(--ink-4), transparent);
+      margin: 0 0 16px 10px;
+    }
+
+    /* ── results ── */
+    .result-banner {
+      display: none;
+      border-radius: 11px;
+      padding: 16px 20px;
+      margin-bottom: 16px;
+      gap: 14px;
+      align-items: flex-start;
+      box-shadow: var(--shadow-sm);
+    }
+    .result-banner.clean       { display: flex; background: var(--green-bg); border: 1px solid var(--green-bd); }
+    .result-banner.compromised { display: flex; background: var(--red-bg);   border: 1px solid var(--red-bd); }
+    .rb-icon  { font-size: 22px; flex-shrink: 0; }
+    .rb-title { font-size: 15px; font-weight: 700; }
+    .rb-sub   { font-size: 13px; margin-top: 2px; }
+    .clean .rb-title { color: #15803d; }
+    .clean .rb-sub   { color: #4ade80; }
+    .compromised .rb-title { color: #b91c1c; }
+    .compromised .rb-sub   { color: #f87171; }
+
+    /* ── stats ── */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .stat {
+      background: var(--white);
+      border: 1px solid var(--ink-4);
+      border-radius: 10px;
+      padding: 16px 10px;
+      text-align: center;
+      box-shadow: var(--shadow-sm);
+      transition: box-shadow .22s ease, transform .22s ease;
+      cursor: default;
+    }
+    .stat:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+    .stat .n { font-size: 28px; font-weight: 700; color: var(--ink); line-height: 1; }
+    .stat .l { font-size: 11px; color: var(--ink-3); margin-top: 5px; text-transform: uppercase; letter-spacing: .5px; }
+    .stat.s-green  .n { color: var(--green); }
+    .stat.s-amber  .n { color: var(--amber); }
+    .stat.s-red    .n { color: var(--red); }
+    .stat.s-blue   .n { color: var(--blue); }
+
+    /* ── result file entries ── */
+    .r-section { margin-bottom: 14px; }
+    .r-section-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .9px;
+      color: var(--ink-2);
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--ink-4);
+      margin-bottom: 8px;
+    }
+    .r-section-title.warn  { color: #b45309; }
+    .r-section-title.danger{ color: #b91c1c; }
+    .r-section-title.info  { color: #1d4ed8; }
+
+    .r-item {
+      background: #f9f9fa;
+      border: 1px solid var(--ink-4);
+      border-radius: 8px;
+      padding: 11px 14px;
+      margin-bottom: 7px;
+      font-size: 12px;
+      font-family: 'DM Mono', 'Fira Code', monospace;
+      transition: box-shadow .2s ease, transform .2s ease, background .2s;
+    }
+    .r-item:hover {
+      background: var(--white);
+      box-shadow: var(--shadow-md);
+      transform: translateX(3px);
+    }
+    .r-item .rname { font-weight: 500; color: var(--ink); margin-bottom: 4px; }
+    .r-item .rmeta { color: var(--ink-3); }
+    .r-item .rg    { color: var(--green); }
+    .r-item .rr    { color: var(--red); }
+
+    .ts { font-size: 11px; color: var(--ink-4); text-align: center; margin-top: 10px; font-family: 'DM Mono', monospace; }
+
+    /* ── faq ── */
+    .faq { margin-top: 36px; }
+    .faq h3 { font-size: 13.5px; font-weight: 600; color: var(--ink); margin-bottom: 14px; text-transform: uppercase; letter-spacing: .5px; }
+    .faq-item {
+      margin-bottom: 10px;
+      border: 1px solid var(--ink-4);
+      border-radius: 10px;
+      padding: 13px 16px;
+      background: var(--white);
+      box-shadow: var(--shadow-sm);
+      transition: box-shadow .22s ease, transform .22s ease, border-color .22s;
+    }
+    .faq-item:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+      border-color: #c4c4c8;
+    }
+    .faq-q { font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 5px; }
+    .faq-a { font-size: 13px; color: var(--ink-2); line-height: 1.6; }
+
+    footer {
+      text-align: center;
+      padding: 20px;
+      font-size: 12px;
+      color: var(--ink-3);
+      border-top: 1px solid var(--ink-4);
+      background: var(--white);
+      font-family: 'DM Mono', monospace;
+    }
+
+    /* ── page load fade-in ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .main > * {
+      animation: fadeUp .4s ease both;
+    }
+    .main > *:nth-child(1) { animation-delay: .05s; }
+    .main > *:nth-child(2) { animation-delay: .10s; }
+    .main > *:nth-child(3) { animation-delay: .15s; }
+    .main > *:nth-child(4) { animation-delay: .20s; }
+    .main > *:nth-child(5) { animation-delay: .25s; }
+    .main > *:nth-child(6) { animation-delay: .30s; }
+
+    @media (max-width: 520px) {
+      .stats { grid-template-columns: repeat(2,1fr); }
+      .hero h1 { font-size: 26px; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">
+    <div class="dot"></div>
+    File Integrity Checker
+  </div>
+  <div class="nav-right">v1.0 &nbsp;·&nbsp; Python + Flask</div>
+</nav>
+
+<div class="hero">
+  <h1>Check if your files changed</h1>
+  <p>Upload files to snapshot their hashes. Re-upload later to see exactly what was modified, deleted, or added.</p>
+  <div class="algo-pills">
+    <span class="pill">SHA-256</span>
+    <span class="pill">SHA-512</span>
+    <span class="pill">SHA-1</span>
+    <span class="pill">MD5</span>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- Step 1 -->
+  <div class="step-label">
+    <div class="num active" id="n1">1</div>
+    Upload your files
+  </div>
+
+  <div class="card">
+    <h2>Create a baseline</h2>
+    <p class="desc">Select the files you want to monitor. The tool will compute a hash for each one and save it as your trusted snapshot.</p>
+
+    <div class="upload-area" id="dz1" ondragover="doDrag(event,1)" ondragleave="doLeave(1)" ondrop="doDrop(event,1)">
+      <input type="file" id="f1" multiple onchange="showFiles('f1','fl1')"/>
+      <div class="up-icon">📁</div>
+      <div class="up-text">Drop files here</div>
+      <div class="up-sub">or <b>click to browse</b> — multiple files supported</div>
+    </div>
+
+    <div class="file-list" id="fl1"></div>
+
+    <div class="algo-row">
+      <label for="algo">Algorithm:</label>
+      <select id="algo">
+        <option value="sha256" selected>SHA-256 (recommended)</option>
+        <option value="sha512">SHA-512</option>
+        <option value="sha1">SHA-1</option>
+        <option value="md5">MD5</option>
+      </select>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-dark" id="b1" onclick="doBaseline()">
+        Save baseline
+        <div class="spin" id="s1"></div>
+      </button>
+      <button class="btn btn-ghost" onclick="doReset()">Clear</button>
+    </div>
+
+    <div class="notice" id="ok1">
+      <span>✓</span>
+      <span id="ok1msg"></span>
+    </div>
+  </div>
+
+  <div class="connector"></div>
+
+  <!-- Step 2 -->
+  <div class="step-label">
+    <div class="num" id="n2">2</div>
+    Re-upload to check
+  </div>
+
+  <div class="card">
+    <h2>Verify integrity</h2>
+    <p class="desc">Upload the same files again — or a modified version of them. The tool compares each file's current hash against the saved baseline.</p>
+
+    <div class="upload-area" id="dz2" ondragover="doDrag(event,2)" ondragleave="doLeave(2)" ondrop="doDrop(event,2)">
+      <input type="file" id="f2" multiple onchange="showFiles('f2','fl2')"/>
+      <div class="up-icon">🔍</div>
+      <div class="up-text">Drop files to verify</div>
+      <div class="up-sub">or <b>click to browse</b></div>
+    </div>
+
+    <div class="file-list" id="fl2"></div>
+
+    <div class="actions">
+      <button class="btn btn-green" id="b2" onclick="doVerify()" disabled>
+        Run check
+        <div class="spin" id="s2"></div>
+      </button>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div id="results" style="display:none">
+    <div class="connector"></div>
+
+    <div class="step-label">
+      <div class="num active" id="n3">3</div>
+      Results
+    </div>
+
+    <div id="banner" class="result-banner"></div>
+
+    <div class="stats">
+      <div class="stat s-green"><div class="n" id="ru">0</div><div class="l">Unchanged</div></div>
+      <div class="stat s-amber"><div class="n" id="rm">0</div><div class="l">Modified</div></div>
+      <div class="stat s-red">  <div class="n" id="rms">0</div><div class="l">Missing</div></div>
+      <div class="stat s-blue"> <div class="n" id="rn">0</div><div class="l">New</div></div>
+    </div>
+
+    <div id="rlists"></div>
+    <div class="ts" id="rts"></div>
+  </div>
+
+  <!-- FAQ -->
+  <div class="faq">
+    <h3>How does this work?</h3>
+
+    <div class="faq-item">
+      <div class="faq-q">What is a hash?</div>
+      <div class="faq-a">A hash is a fixed-length fingerprint of a file's contents. SHA-256 always produces a 64-character string. Change even one byte of the file and the entire hash changes completely.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q">Are my files uploaded to a server?</div>
+      <div class="faq-a">Yes — files are sent to the server to compute their hashes, but nothing is stored on disk. Everything stays in memory and is cleared when you reset or close the tab.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q">Which algorithm should I use?</div>
+      <div class="faq-a">SHA-256 is the safe default. It's fast, widely trusted, and has no known vulnerabilities. Use SHA-512 if you need extra assurance. Avoid MD5 for anything security-related.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q">Why should I avoid MD5?</div>
+      <div class="faq-a">MD5 is vulnerable to collision attacks, where two different files can produce the same hash. This makes it unsuitable for security-sensitive applications.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q">Can I use this for folders?</div>
+      <div class="faq-a">Not directly, but you can create a .zip archive of your folder and upload that. Just remember to use the same .zip file for both baseline and verification.</div>
+    </div>
+    
+
+    <div class="faq-item">
+      <div class="faq-q">Is this secure?</div>
+      <div class="faq-a">This tool is designed for convenience and basic integrity checking, not for high-security use cases. Don't rely on it to protect sensitive data or against sophisticated attackers.</div>
+    </div>
+
+  </div>
+
+</div>
+
+<footer>File Integrity Checker &nbsp;·&nbsp; Built with Python + Flask</footer>
+
+<script>
+  const SID = "s_" + Math.random().toString(36).slice(2, 10);
+  let ready = false;
+
+  function fmt(b) {
+    if (b < 1024) return b + " B";
+    if (b < 1048576) return (b/1024).toFixed(1) + " KB";
+    return (b/1048576).toFixed(1) + " MB";
+  }
+
+  function showFiles(fid, lid) {
+    const files = Array.from(document.getElementById(fid).files);
+    const list  = document.getElementById(lid);
+    if (!files.length) { list.style.display = "none"; return; }
+    list.style.display = "block";
+    list.innerHTML = files.map(f =>
+      `<div class="file-row"><span>📄</span><span class="fn">${f.name}</span><span class="fs">${fmt(f.size)}</span></div>`
+    ).join("");
+  }
+
+  function doDrag(e,n) { e.preventDefault(); document.getElementById("dz"+n).classList.add("over"); }
+  function doLeave(n)  { document.getElementById("dz"+n).classList.remove("over"); }
+  function doDrop(e,n) {
+    e.preventDefault();
+    doLeave(n);
+    const inp = document.getElementById("f"+n);
+    const dt  = new DataTransfer();
+    for (const f of e.dataTransfer.files) dt.items.add(f);
+    inp.files = dt.files;
+    showFiles("f"+n, "fl"+n);
+  }
+
+  async function doBaseline() {
+    const inp  = document.getElementById("f1");
+    const algo = document.getElementById("algo").value;
+    if (!inp.files.length) { alert("Pick some files first."); return; }
+
+    load(1, true);
+    const fd = new FormData();
+    fd.append("algo", algo);
+    fd.append("session_id", SID);
+    for (const f of inp.files) fd.append("files", f);
+
+    try {
+      const r = await fetch("/api/baseline", { method: "POST", body: fd });
+      const d = await r.json();
+      if (!r.ok) { alert(d.error); return; }
+
+      ready = true;
+      document.getElementById("b2").disabled = false;
+      document.getElementById("n1").className = "num done";
+      document.getElementById("n2").className = "num active";
+
+      const msg = document.getElementById("ok1msg");
+      msg.textContent = `${d.count} file${d.count>1?"s":""} hashed with ${d.algo} — baseline saved.`;
+      document.getElementById("ok1").classList.add("show");
+      document.getElementById("results").style.display = "none";
+    } catch { alert("Something went wrong. Try again."); }
+    finally { load(1, false); }
+  }
+
+  async function doVerify() {
+    const inp = document.getElementById("f2");
+    if (!inp.files.length) { alert("Pick some files to check."); return; }
+
+    load(2, true);
+    const fd = new FormData();
+    fd.append("session_id", SID);
+    for (const f of inp.files) fd.append("files", f);
+
+    try {
+      const r = await fetch("/api/verify", { method: "POST", body: fd });
+      const d = await r.json();
+      if (!r.ok) { alert(d.error); return; }
+      renderResults(d);
+      document.getElementById("n2").className = "num done";
+      document.getElementById("n3").className = "num active";
+    } catch { alert("Something went wrong. Try again."); }
+    finally { load(2, false); }
+  }
+
+  function renderResults(d) {
+    const area = document.getElementById("results");
+    area.style.display = "block";
+
+    const banner = document.getElementById("banner");
+    if (d.status === "CLEAN") {
+      banner.className = "result-banner clean";
+      banner.innerHTML = `<div class="rb-icon">✅</div><div><div class="rb-title">All files match</div><div class="rb-sub">No changes detected since the baseline.</div></div>`;
+    } else {
+      banner.className = "result-banner compromised";
+      banner.innerHTML = `<div class="rb-icon">⚠️</div><div><div class="rb-title">Changes detected</div><div class="rb-sub">One or more files differ from the baseline.</div></div>`;
+    }
+
+    document.getElementById("ru").textContent  = d.unchanged;
+    document.getElementById("rm").textContent  = d.modified;
+    document.getElementById("rms").textContent = d.missing;
+    document.getElementById("rn").textContent  = d.new_files;
+
+    let html = "";
+
+    if (d.modified_list.length) {
+      html += `<div class="r-section"><div class="r-section-title warn">Modified — hash mismatch</div>`;
+      d.modified_list.forEach(f => {
+        html += `<div class="r-item">
+          <div class="rname">📄 ${f.name}</div>
+          <div class="rmeta">expected &nbsp;<span class="rg">${f.expected}</span></div>
+          <div class="rmeta">got &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="rr">${f.actual}</span></div>
+          <div class="rmeta">size: ${f.old_size} → ${f.new_size} bytes</div>
+        </div>`;
+      });
+      html += `</div>`;
+    }
+
+    if (d.missing_list.length) {
+      html += `<div class="r-section"><div class="r-section-title danger">Missing — not found in re-upload</div>`;
+      d.missing_list.forEach(f => {
+        html += `<div class="r-item"><div class="rname">✕ &nbsp;${f}</div></div>`;
+      });
+      html += `</div>`;
+    }
+
+    if (d.new_files_list.length) {
+      html += `<div class="r-section"><div class="r-section-title info">New — not in baseline</div>`;
+      d.new_files_list.forEach(f => {
+        html += `<div class="r-item"><div class="rname">+ &nbsp;${f}</div></div>`;
+      });
+      html += `</div>`;
+    }
+
+    document.getElementById("rlists").innerHTML = html;
+    document.getElementById("rts").textContent =
+      `Checked at ${new Date(d.verified_at).toLocaleString()}  ·  ${d.algo}`;
+
+    area.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function load(n, on) {
+    document.getElementById("b"+n).disabled        = on;
+    document.getElementById("s"+n).style.display   = on ? "block" : "none";
+  }
+
+  async function doReset() {
+    await fetch("/api/reset", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ session_id: SID })
+    }).catch(()=>{});
+
+    ready = false;
+    ["f1","f2"].forEach(id => document.getElementById(id).value = "");
+    ["fl1","fl2"].forEach(id => { const el = document.getElementById(id); el.style.display = "none"; el.innerHTML = ""; });
+    document.getElementById("ok1").classList.remove("show");
+    document.getElementById("results").style.display = "none";
+    document.getElementById("rlists").innerHTML = "";
+    document.getElementById("b2").disabled = true;
+    document.getElementById("n1").className = "num active";
+    document.getElementById("n2").className = "num";
+    document.getElementById("n3").className = "num";
+  }
+</script>
+</body>
+</html>
